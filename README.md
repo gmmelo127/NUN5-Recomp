@@ -2,81 +2,121 @@
 
 Recompilação estática de **Naruto Shippuden: Ultimate Ninja 5** (PlayStation 2)
 para PC. O código MIPS do jogo é traduzido para C++ e compilado nativamente; o
-resto do console (VU1, GS, IOP, SPU2) é reimplementado no runtime. Nenhum código
-do jogo é distribuído: cada usuário gera a build a partir da própria ISO.
+resto do console (VU1, GS, IOP, SPU2) é reimplementado no runtime.
 
-- `windows/` — ferramenta de dev Windows (fonte + scripts + toolchain local)
-- `linux/` — ferramenta de dev Linux (fonte + scripts)
-- instalação e requisitos: `LEIA-ME.txt` dentro de cada pacote
-- builds prontas: aba **Releases**
+**Nenhum código do jogo é distribuído.** Cada usuário gera a build na própria
+máquina a partir da sua ISO. O download traz só a ferramenta.
 
----
+## Como funciona
 
-# dist — repositório x releases
+- `eerecomp` traduz o executável MIPS (EE) para C++ unidade por unidade.
+- `vurecomp` compila os microprogramas da VU1. Os 63 programas usados pelo jogo
+  são recuperados **estaticamente** do ELF pelo manifesto
+  `scripts/vu1_manifest.txt` (192 programas com os alvos de salto), então nada
+  é interpretado em jogo.
+- O runtime emula o resto do console: VU1, GS (wgpu/Vulkan), IOP, SPU2, IPU e
+  memory card. A renderização é feita em compute shaders na GPU.
+- A build é gerada e compilada na máquina do usuário; a ISO nunca é enviada
+  para lugar nenhum.
 
-Duas coisas apenas:
-
-```text
-dist/
-├── windows/    FERRAMENTA DE DEV Windows  -> vai para o REPOSITÓRIO
-├── linux/      FERRAMENTA DE DEV Linux    -> vai para o REPOSITÓRIO
-├── releases/   BUILDS PRONTOS             -> vai para as RELEASES
-└── nao-enviar/ builds locais com código do jogo (NUNCA publicar)
-```
-
-## O que vai para o REPOSITÓRIO
-
-`windows/` e `linux/`. São a mesma ferramenta de dev, uma por sistema:
+## O que tem no repositório
 
 ```text
-runtime/     emulador PS2
-recomp/      eerecomp + vurecomp
-host/        main + janela
-menu/        menu de configuração
-scripts/     port_win.py / build_win.py  (Windows)
-             port.sh (Linux)  +  vu1_manifest.txt
-patches/     pnach e widescreen
-CMakeLists.txt, docs, LICENSE
+windows/   ferramenta de dev Windows (fonte + scripts + instalador.nsi)
+linux/     ferramenta de dev Linux   (fonte + scripts)
 ```
 
-Cada uma tem o seu `.gitignore` que **exclui `toolchain/`**: o Zig (339 MB),
-o Python (22 MB) e as bibliotecas grandes (`wgpu-native` no Linux) não cabem
-no GitHub (limite de 100 MB por arquivo). Eles ficam só na sua máquina e vão
-**embutidos nos instaladores das releases**.
+As duas pastas contêm a **mesma fonte** (`runtime/`, `recomp/`, `host/`,
+`menu/`, `scripts/`, `CMakeLists.txt`, patches). O que muda é só a camada do
+sistema: `.bat`/`.ps1` no Windows e `.sh` no Linux.
 
-Para usar a ferramenta de dev basta ter o `toolchain/` na pasta:
+O `toolchain/` (Zig, Python, SDL2, wgpu) **não** está no repositório por causa
+do limite de 100 MB do GitHub. Ele vai embutido nos pacotes da aba
+[**Releases**](https://github.com/gmmelo127/NUN5-Recomp/releases).
 
-- Windows: `toolchain/` com Zig, Python, SDL2, wgpu (é o que o instalador traz).
-- Linux: `toolchain/` com SDL2, wgpu e libstdc++ (ou rode `scripts/setup.sh`
-  para baixar; o compilador é o `g++` do sistema).
+## Instalação
 
-## O que vai para as RELEASES
+### Windows 10/11 x64
 
-Somente `releases/` (3 arquivos, todos < 100 MB):
+Baixe `naruto5-recomp-setup-0.1-win64.exe` na aba Releases e execute.
 
-```text
-naruto5-recomp-setup-0.1-win64.exe                 62 MB  instalador Windows (recomendado)
-naruto5-recomp-toolchain-0.1-win64.7z              56 MB  Windows portátil (extrair e rodar)
-naruto5-recomp-toolchain-0.1-linux-x86_64.tar.xz   12 MB  instalador Linux
+O wizard pede a pasta e a ISO, gera o C++, compila e cria os atalhos. O pacote
+já inclui Zig, Python, SDL2 e wgpu: **não é preciso instalar mais nada**.
+Também há o `naruto5-recomp-toolchain-0.1-win64.7z` (portátil, extrair e rodar
+`instalar.bat`).
+
+### Linux x86_64
+
+Baixe `naruto5-recomp-toolchain-0.1-linux-x86_64.tar.xz` na aba Releases.
+
+```bash
+tar -xJf naruto5-recomp-toolchain-0.1-linux-x86_64.tar.xz
+cd naruto5-recomp-toolchain-0.1-linux-x86_64
+./instalar.sh "/caminho/para/Naruto5.iso"
+./jogar.sh
 ```
 
-- **Windows**: o `.exe` já traz Zig, Python, SDL2 e wgpu. O usuário escolhe a
-  ISO na instalação e o jogo é gerado/compilado localmente. Não precisa
-  instalar mais nada.
-- **Linux**: o `.tar.xz` traz SDL2, wgpu e libstdc++. O `./instalar.sh` usa o
-  compilador do sistema (`g++`/`clang++`) e `cmake`/`ninja`/`python3`, que já
-  vêm em qualquer distro de desenvolvimento. O passo a passo completo, com os
-  comandos por distro, está em `LEIA-ME.txt` dentro do pacote:
-  `./instalar.sh "/caminho/Naruto5.iso"` e depois `./jogar.sh`.
-- Nenhum release contém código do jogo: a build é sempre feita a partir da
-  ISO do próprio usuário.
+Requisitos:
 
-## Regra de ouro
+- driver **Vulkan** funcionando (Mesa/RADV, NVIDIA ou Intel);
+- `g++` 13+ **ou** `clang++` 14+ (C++20 `<format>`);
+- `cmake` 3.20+, `ninja` e `python3`;
+- SDL2 já vem no pacote.
 
-1. Repositório = `windows/` + `linux/` (sem `toolchain/`). ~5 MB.
-2. Releases = `releases/` (3 arquivos). Nenhum passa de 100 MB.
-3. `nao-enviar/` nunca é publicado.
+```bash
+# Debian / Ubuntu / Mint
+sudo apt install g++ cmake ninja-build python3 libvulkan1 mesa-vulkan-drivers
 
-Atualizou o código? Edite **as duas** pastas (`windows/` e `linux/`) — ou
-copie uma para a outra antes de mexer — e regenere os 3 arquivos de
-`releases/`, atualizando `releases/SHA256SUMS`.
+# Fedora
+sudo dnf install gcc-c++ cmake ninja-build python3 vulkan-loader mesa-vulkan-drivers
+
+# Arch / Manjaro
+sudo pacman -S gcc cmake ninja python vulkan-radeon
+
+# openSUSE
+sudo zypper install gcc-c++ cmake ninja python3 libvulkan1 Mesa-libvulkan1
+```
+
+O `instalar.sh` confere tudo e diz o que falta antes de começar. O passo a
+passo completo está em `LEIA-ME.txt` dentro do pacote.
+
+### Compilar a ferramenta a partir do código
+
+O pacote de release já traz o toolchain pronto. Para usar esta árvore
+diretamente:
+
+- **Windows:** copie `toolchain/` do pacote `.7z` para
+  `windows/naruto5-recomp-toolchain-0.1-win64/` e rode `instalar.bat`.
+- **Linux:** rode `linux/naruto5-recomp-toolchain-0.1-linux-x86_64/scripts/setup.sh`
+  (baixa o wgpu-native e compila `eerecomp`/`vurecomp`) e depois
+  `./instalar.sh`.
+
+## Jogar
+
+- **Windows:** atalho criado pelo instalador, ou `jogar.bat`.
+- **Linux:** `./jogar.sh` (ou `./jogar.sh /caminho/para/outra.iso`).
+
+O log de cada sessão fica em `games/naruto/last_run.log`; a linha `[perf]`
+mostra o tempo de frame (`ms/frame`), o tempo de CPU (`cpu`), o tempo da EE
+(`ee`) e se algum programa VU1 ficou fora da tabela AOT (`aot hits/misses`).
+
+## Solução de problemas
+
+- **Tela preta / "no Vulkan device"** — o driver Vulkan não está funcionando.
+  Teste com `vulkaninfo`. Em notebook com GPU híbrida, force a dedicada com
+  `DRI_PRIME=1 ./jogar.sh` (Linux) ou pelo painel da AMD/NVIDIA (Windows).
+- **Erro de `<format>` ou g++ antigo** — instale GCC 13+ ou use
+  `CXX=clang++ ./instalar.sh`.
+- **`cmake`/`ninja` não encontrado** — instale os pacotes da seção Linux.
+- **Lentidão** — veja `[perf]` no log. Se `aot` tiver misses, rode de novo (os
+  programas que faltaram são compilados ao sair). Se `cpu` estiver baixo e
+  `ms/frame` alto, o limite é a GPU: reduza `anti_aliasing` em
+  `game_settings.ini`.
+- **Remover a build** — `./desinstalar.sh` (Linux) ou o desinstalador
+  (Windows). A ISO e os saves não são tocados.
+
+## Legal
+
+A ferramenta é MIT. O jogo, a ISO e qualquer código gerado a partir dela
+pertencem aos seus donos. Este repositório não distribui o jogo nem material
+derivado dele.
