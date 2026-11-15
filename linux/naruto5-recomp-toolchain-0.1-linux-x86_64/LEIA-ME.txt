@@ -1,0 +1,96 @@
+NARUTO SHIPPUDEN: ULTIMATE NINJA 5 — RECOMP (Linux x86_64)
+==========================================================
+
+A ISO do jogo NAO acompanha este pacote. Voce usa a sua copia legal.
+A build e gerada na sua maquina a partir dela; nada de codigo do jogo
+vem no download.
+
+
+1) O QUE VOCE PRECISA
+---------------------
+- Linux x86_64 com driver Vulkan funcionando (Mesa/RADV, NVIDIA ou Intel).
+- Compilador C++20: g++ 13 ou mais novo, ou clang++ 14 ou mais novo.
+- cmake 3.20+, ninja e python3.
+- SDL2 nao precisa instalar: ela vem dentro de toolchain/sdl2.
+
+Instale o que faltar:
+
+  Debian / Ubuntu / Mint:
+    sudo apt install g++ cmake ninja-build python3 libvulkan1 mesa-vulkan-drivers
+
+  Fedora:
+    sudo dnf install gcc-c++ cmake ninja-build python3 vulkan-loader mesa-vulkan-drivers
+
+  Arch / Manjaro:
+    sudo pacman -S gcc cmake ninja python vulkan-radeon
+    # Intel: vulkan-intel   |   NVIDIA: vulkan-nvidia
+
+  openSUSE:
+    sudo zypper install gcc-c++ cmake ninja python3 libvulkan1 Mesa-libvulkan1
+
+Confira as versoes:
+
+  g++ --version      # precisa ser 13 ou maior (por causa de <format>)
+  cmake --version    # 3.20 ou maior
+  ninja --version
+  python3 --version
+
+Se o seu g++ for antigo, instale o clang++ 14+ e rode:
+  CXX=clang++ ./instalar.sh /caminho/Naruto5.iso
+
+
+2) INSTALAR (uma vez)
+---------------------
+  ./instalar.sh /caminho/para/Naruto5.iso
+
+O que ele faz:
+  - extrai a ISO e o executavel do jogo;
+  - traduz o codigo MIPS para C++ (eerecomp);
+  - compila os microprogramas VU1 (vurecomp) e recupera os que faltam
+    estaticamente pelo manifesto (scripts/vu1_manifest.txt);
+  - compila o runner em build/native-naruto/ps2run.
+
+A primeira instalacao leva alguns minutos. Depois, o cache de analise
+(games/naruto/.analysis-key) faz as seguintes serem rapidas.
+
+Se voce nao passar o caminho, o script procura jogo.iso na pasta atual
+e nas pastas acima.
+
+
+3) JOGAR
+--------
+  ./jogar.sh
+
+O launcher usa games/naruto/disc.iso (criado na instalacao) e o build em
+build/native-naruto/ps2run. Para usar outra ISO:
+
+  ./jogar.sh /caminho/para/Naruto5.iso
+
+Sai com Ctrl+C ou fechando a janela. O log fica em games/naruto/last_run.log.
+
+
+4) PROBLEMAS COMUNS
+-------------------
+- "Build ausente": rode ./instalar.sh primeiro.
+- "g++: command not found" ou erro de <format>: falta GCC 13+/Clang 14+.
+- "cmake/ninja not found": instale os pacotes da secao 1.
+- Tela preta, "no Vulkan device" ou "WebGPU unavailable":
+    o driver Vulkan nao esta instalado/funcionando para a sua GPU.
+    Rode "vulkaninfo" para testar. Em notebooks com GPU hibrida, force a
+    GPU dedicada (ex.: "DRI_PRIME=1 ./jogar.sh").
+- Jogo lento: veja a linha [perf] em games/naruto/last_run.log. Se "aot"
+  tiver misses, rode ./jogar.sh de novo (ele compila os VU1 que faltaram
+  ao sair). Se "cpu" estiver baixo e o ms/frame alto, o limite e a GPU:
+  reduza "anti_aliasing" em game_settings.ini.
+- Para remover build e cache: ./desinstalar.sh (mantem a sua ISO e saves).
+
+
+5) CONTEUDO DO PACOTE
+---------------------
+  runtime/ recomp/ host/ menu/   codigo-fonte (MIT)
+  scripts/                       pipeline (port.sh, setup.sh, vu_refresh.sh)
+  toolchain/sdl2, wgpu-native    bibliotecas usadas na build
+  scripts/vu1_manifest.txt       manifesto VU1 (metadado, sem codigo do jogo)
+  instalar.sh  jogar.sh  desinstalar.sh
+
+Nada aqui e codigo do jogo: tudo e gerado a partir da sua ISO.

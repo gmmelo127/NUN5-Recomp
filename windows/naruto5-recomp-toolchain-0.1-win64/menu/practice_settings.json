@@ -1,0 +1,254 @@
+{
+  "title": "RECOMP SETTINGS",
+  "subtitle": "Naruto Shippuden: Ultimate Ninja 5",
+  "footer": "UP/DOWN Select   LEFT/RIGHT Change   R1/L1 Section   X Apply   A Close",
+  "note": "As configuracoes so sao salvas ao apertar X (Apply). Alteracoes pendentes aparecem como NAO SALVO.",
+  "source": {
+    "game": "Naruto Shippuden: Ultimate Ninja 5 (PAL, SLES-556.05)",
+    "menu": "Practice Settings",
+    "captured_from": "Free Battle -> Practice -> Character/Sakura -> Linked Mode Auto -> stage -> VS screen -> Square",
+    "capture_frames": [
+      18300,
+      18400,
+      19400,
+      19800
+    ],
+    "overlay": {
+      "base": "0x8F4000",
+      "file": "menu/008F4000_8C45F35E.bin",
+      "size": "0x38000",
+      "code_units": [
+        "recomp_code/m_008F4000_8C45F35E_unit_0000.cpp",
+        "recomp_code/m_008F4000_8C45F35E_unit_0001.cpp"
+      ],
+      "text_table": "menu/overlay_strings.txt",
+      "settings_table": "menu/settings_strings.txt"
+    }
+  },
+  "layout": {
+    "panel_x": 40,
+    "panel_y": 120,
+    "row_height": 64,
+    "rows_visible": 7,
+    "colors": {
+      "row": "#E8C51A",
+      "row_selected": "#F2A64A",
+      "value": "#F4E2A8",
+      "text": "#2A0E04",
+      "section": "#E89818",
+      "description": "#FFFFFF"
+    },
+    "font": "texture-based in the original; the new recomp menu can use a bitmap font"
+  },
+  "sections": [
+    {
+      "id": "recomp",
+      "title": "Display Settings",
+      "items": [
+        {
+          "id": "resolution",
+          "label": "Resolution",
+          "value": "1280x720",
+          "options": [
+            "960x720",
+            "1280x720",
+            "1600x900",
+            "1920x1080",
+            "2560x1440",
+            "3840x2160"
+          ],
+          "description": "Window and presentation target; the internal GS raster scale follows automatically when you press X (1080p = 4x/2048x1792). The window can still be maximized."
+        },
+        {
+          "id": "screen_mode",
+          "label": "Screen Mode",
+          "value": "Windowed",
+          "options": [
+            "Windowed",
+            "Fullscreen",
+            "Borderless"
+          ],
+          "description": "Windowed, exclusive fullscreen or borderless desktop fullscreen."
+        },
+        {
+          "id": "aspect",
+          "label": "Aspect Ratio",
+          "value": "16:9",
+          "options": [
+            "4:3",
+            "16:9",
+            "21:9",
+            "32:9",
+            "Fit"
+          ],
+          "description": "Presentation aspect ratio (PS2_PRESENT_AR). The widescreen FOV follows on the next frame when patches are loaded."
+        },
+        {
+          "id": "fps",
+          "label": "FPS",
+          "value": "60",
+          "options": [
+            "30",
+            "60",
+            "120"
+          ],
+          "description": "Internal FPS target: 30, 60 or 120. With V-Sync On it is capped to the monitor; with V-Sync Off it can exceed it."
+        },
+        {
+          "id": "anti_aliasing",
+          "label": "Anti-Aliasing",
+          "value": "Off",
+          "options": [
+            "Off",
+            "FXAA",
+            "FXAA HQ",
+            "FXAA Ultra"
+          ],
+          "description": "Post-process anti-aliasing. FXAA is 4 taps; HQ adds diagonals; Ultra adds a wider 12-tap kernel (more GPU work)."
+        },
+        {
+          "id": "graphic_api",
+          "label": "Graphic API",
+          "value": "Auto",
+          "options": [
+            "Auto",
+            "Vulkan",
+            "DirectX 12"
+          ],
+          "description": "WebGPU backend. Auto picks the best available; Vulkan is available on Linux/Windows; DirectX 12 appears only on Windows. Applied on the next start."
+        },
+        {
+          "id": "texture_filter",
+          "label": "Texture Filtering",
+          "value": "Auto",
+          "options": [
+            "Auto",
+            "Nearest",
+            "Bilinear"
+          ],
+          "description": "Auto follows the game TEX1 bilinear flag; Nearest/Bilinear force the texture filter."
+        },
+        {
+          "id": "aniso",
+          "label": "Anisotropic Filtering",
+          "value": "Off",
+          "options": [
+            "Off",
+            "2x",
+            "4x",
+            "8x",
+            "16x"
+          ],
+          "description": "Reserved: the PS2 GS has no anisotropic filter. The value is saved for future renderers."
+        },
+        {
+          "id": "draw_distance",
+          "label": "Draw Distance",
+          "value": "Default",
+          "options": [
+            "Default",
+            "Far",
+            "Very Far"
+          ],
+          "description": "Reserved for a future game patch: this game streams the scenario and exposes no draw-distance variable, so this value is saved but has no visual effect."
+        },
+        {
+          "id": "mtvu",
+          "label": "MTVU",
+          "value": "On",
+          "options": [
+            "On",
+            "Off"
+          ],
+          "description": "Multithreaded VU1: run VU1 microcode on its own host thread. Applied on the next start."
+        },
+        {
+          "id": "hud_aspect",
+          "label": "HUD Aspect Ratio",
+          "value": "Off",
+          "options": [
+            "Auto",
+            "4:3",
+            "16:9",
+            "21:9",
+            "32:9",
+            "Off"
+          ],
+          "description": "HUD X correction aspect. Auto follows the presentation aspect; Off disables the correction (recommended for Master Mode scenery)."
+        },
+        {
+          "id": "hud_scale",
+          "label": "HUD Scale",
+          "value": "Auto",
+          "options": [
+            "Auto",
+            "0.57",
+            "0.67",
+            "0.75",
+            "1.00"
+          ],
+          "description": "Manual HUD X factor. Auto lets HUD Aspect Ratio decide; applies on new HUD draws."
+        },
+        {
+          "id": "vsync",
+          "label": "V-Sync",
+          "value": "On",
+          "options": [
+            "Off",
+            "On"
+          ],
+          "description": "Presentation V-Sync (Fifo). Off uses Mailbox/Immediate when available."
+        },
+        {
+          "id": "exit_game",
+          "label": "Exit Game",
+          "value": "Press X",
+          "options": [
+            "Press X"
+          ],
+          "description": "Select this row and press X (Apply) to close the game."
+        }
+      ]
+    },
+    {
+      "id": "state",
+      "label": "Save States",
+      "items": [
+        {
+          "id": "save_state",
+          "label": "Save State",
+          "value": "Press X",
+          "options": [
+            "Press X"
+          ],
+          "description": "Write a state file to states/naruto.ps2 at the next emulation frame. Includes the GS VRAM and all machine registers."
+        },
+        {
+          "id": "load_state",
+          "label": "Load State",
+          "value": "Press X",
+          "options": [
+            "Press X"
+          ],
+          "description": "Restore states/naruto.ps2. The window/aspect settings stay as they are; the game resumes from the saved frame."
+        }
+      ]
+    },
+    {
+      "id": "game",
+      "label": "Game Settings",
+      "items": [
+        {
+          "id": "invert_camera",
+          "label": "Inverted Camera",
+          "value": "Off",
+          "options": [
+            "Off",
+            "On"
+          ],
+          "description": "Invert both right-stick axes (X and Y) used by the camera."
+        }
+      ]
+    }
+  ]
+}

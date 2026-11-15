@@ -1,0 +1,272 @@
+Menu de configuracoes do recomp (02/11/2026)
+
+- Renderizacao WebGPU no passe de apresentacao; textura fixa 1920x1080 e o
+  shader faz o encaixe/letterbox 16:9 (sem escala na CPU). Render ~1,6-3 ms.
+- Abre com Square no Mode Select e no Master Mode, SOMENTE no menu de pause
+  (Item/Quit/Status), com prompt OPCOES [Square] no canto inferior esquerdo.
+  No mundo o Square e' do jogo e o pad nao e' mascarado.
+- Secao unica Display Settings: Resolution, Screen Mode, Aspect Ratio, FPS
+  (30/60/120, taxa INTERNA), HUD Scale, V-Sync.
+- FPS muda g_options.fps/frame_cycles: 30 -> ~30 FPS; 120 + VSync Off -> ~121
+  FPS em monitor 60 Hz. Com VSync On o FPS e' limitado ao monitor.
+- Janela fixada pela opcao Resolution (nao redimensionavel); 4K em janela
+  confirmado. A escala interna acompanha no proximo start.
+- Somente X (Apply) grava game_settings.ini e aplica tudo. Alteracoes pendentes
+  mostram "NAO SALVO" (com acento) e "*" na linha; fechar sem X descarta.
+- Visual laranja claro, cantos arredondados, fonte ASCII + Latin-1.
+- Logs [input] controller/pad para diagnosticar joystick; status 4 (wait) e'
+  normal no dump de encerramento.
+- Frame time: 2194x1160/esc5 ~10,9/13,4 ms; 4K/esc6 ~15,7/19,3/20,2 ms
+  (VSync off/unlocked). Em 4K o Master Mode passa de 16,7 ms; use resolucao
+  menor para 60/120 estaveis.
+- Fonte editavel: menu/practice_settings.json + generate_header.py;
+  fonte bitmap: generate_font.py.
+- Evidencias: menu/recomp_menu*.png; estado de teste:
+  menu/states/mode_select.ps2 (nao incluido neste backup).
+
+Quarta rodada (performance/2D):
+- Resolution aplica a escala interna na hora (gpu::set_scale, VRAM
+  preservada por readback/restore); janela pode ser maximizada mantendo a
+  resolucao escolhida. Escala automatica 2/3/5/6 (1080p/1600 sem o 4 antigo);
+  titulo mostra janela/interna/Supersampling. 4K->720p reduz 6->2 na hora.
+- Mode Select e pause do Master Mode sao 2D 4:3 nativos: pillarbox 4:3 no
+  present (FOV 4:3 tambem); o mundo 3D/battle usam o aspecto escolhido. HUD
+  scale dinamico. Evita menus/objetos 2D esticados em 16:9/21:9/32:9.
+- Frame time: menu ~2 ms; 4K/esc6 ~15,7/19,3/20,2 ms; 2194/esc5
+  ~10,9/13,4 ms; battle 720p/esc2 ~7,2 ms. Em 4K o Master Mode ainda passa
+  de 16,7 ms; use 1080p/1440p para 60/120 estaveis.
+
+Quinta rodada (correcoes + 14 itens):
+- Pause do Master Mode deixou de ser 4:3: usa o aspecto escolhido (16:9/21:9/
+  32:9), com o FOV widescreen. Mode Select/character select continuam 4:3.
+- Resolucao interna limitada pela Resolution do menu: redimensionar/maximizar a
+  janela NAO aumenta a escala. Medido: janela 1920x1080 + Resolution 1280x720 ->
+  "Resolucao interna 1280x720 | Supersampling 2x". Titulo ampliado para 512
+  bytes (antes 192 truncava justamente a parte de resolucao interna).
+- FPS virou limite de APRESENTACAO (g_options.hz) com acumulador no vblank;
+  frame_cycles() voltou ao nativo 60/50. 30 FPS nao deixa mais o jogo lento:
+  FPS Render 29.9 | FPS Logica 59.8 | Frame Time 33.4 ms. 120 + VSync Off:
+  121.2 render / 60.6 logica / 8.3 ms.
+- 14 itens em Display Settings: Resolution, Screen Mode, Aspect Ratio, FPS,
+  Anti-Aliasing (Off/FXAA), Graphic API (Auto/Vulkan/Software), Texture
+  Filtering (Auto/Nearest/Bilinear), Anisotropic Filtering (reservado), Draw
+  Distance (reservado), MTVU, HUD Aspect Ratio, HUD Scale, V-Sync, Exit Game.
+- AA FXAA no blit.wgsl (RMSE 0.0059 vs Off em 720p); Texture Filtering testado
+  sem --filter (RMSE 0.022 Auto vs Nearest); HUD Aspect Auto vs Off muda a
+  largura do HUD (RMSE 0.0087).
+- Graphic API Vulkan (PS2_GPU_BACKEND), Software (PS2_PRESENT_SOFTWARE, sem
+  overlay) e MTVU Off (PS2_NO_VU_THREAD) iniciam e rodam; Exit Game encerra com
+  "exit game".
+- Draw Distance nao foi mantido como patch de culling: 0xB3EF3C e' o FOV/
+  metadata da camera (45 em 618=focal 256/tan(22.5)); escrever 60/90/170 nao
+  muda a imagem e nao corrige pop-in. O item fica reservado/salvo no ini.
+- Bug de objetos ao caminhar nao reproduzido de forma confiavel: caminhada
+  reta e giro de 360 graus em 21:9 nao mostraram objetos faltando/distorcidos.
+  Precisa de um clipe/estado do usuario para confirmar.
+- Evidencias novas: menu/recomp_menu_14items.png,
+  menu/recomp_menu_pause_21x9.png, texture_filter_compare.png,
+  hud_aspect_compare.png.
+- Aspecto salvo agora vence o flag --widescreen: com aspect=21:9 no ini,
+  --widescreen continua aplicando os patches mas o FOV/apresentacao ficam 21:9
+  (testado: [fov] aspect 21:9). PS2_PRESENT_AR explicito ainda tem prioridade.
+- Teste final de persistencia: abrir no Mode Select com aspect=21:9/fps=60,
+  mudar FPS para 30 e apertar X -> ini regravado (fps=30), titulo
+  "FPS Render 29.9 | FPS Logica 60.9 | Frame Time 33.4 ms".
+
+Sexta rodada (HUD, joystick, AA, performance, objetos):
+- HUD Aspect Ratio agora muda de verdade no Master Mode: moldura/retrato/
+  barra de vida (tbp 15200/15136/14928/14944/15072, anchor 0) e minimapa
+  (15072 + render target 14416, anchor 512). Teste 16:9 x Off: RMSE 0.0378,
+  moldura visivelmente mais estreita e mapa mais estreito.
+- O bug de objetos/triangulo preto ao caminhar era a correcao de HUD tocando
+  15360/15424/15616 (texturas compartilhadas com o cenario). Removidas; a
+  caminhada em 21:9 ficou limpa. Evidencia: menu/object_walk_hud_fix.png.
+- Prompt OPCOES: o latch 1->0 disparava em transicoes. Agora exige o bit 0x800
+  limpo por 30 frames; o pad nao e' mascarado no mundo por engano.
+- Joystick: watchdog de 1 s reabre controles desconectados sem evento
+  ([input] controller N disconnected); poll_port tambem fecha pad destacado.
+- Anti-Aliasing: Off, FXAA (4 taps), FXAA HQ (8 taps) e FXAA Ultra (12 taps),
+  bits 27-28 do Blit.pad. Testado; HQ e Ultra geram imagens diferentes.
+- Performance: escala interna = min(janela, Resolution). 720p com Resolution
+  2560 cai de 2560x2560/5x para 1024x1024/2x (~6,25x menos pixels). Tiers
+  2/3/4/5 (2560 -> 4x/2048, 4K -> 5x/2560). Titulo mostra Resolucao
+  configurada x interna e usa buffer de 768 bytes.
+- `--window-size WxH` abre janela menor sem mudar a Resolution (teste:
+  1280x720 + config 2560 -> interna 1024x1024/2x; 1920x1080 -> 1536/3x).
+- Medido: 2194x1160 + config 2560 -> interna 2048/4x, GPU real ~77% (antes
+  2560/5x ~81%); 720p + config 2560 -> 1024/2x, GPU real ~56%; 720p + AA Ultra
+  + FPS 30 -> 30.3 render / 60.6 logica / 33.0 ms.
+- Reforco do prompt OPCOES: alem do bit 0x800 limpo por 30 frames, exige o
+  icone Map do pause (tbp 15360/PSMT8 na faixa x 200-310, y 15-130). Testado:
+  pause live mostra o prompt; mundo sem prompt; fechar o pause (Start) esconde
+  o prompt. O estado salvo com o pause ja aberto nao redesenha o HUD e por isso
+  nao mostra o prompt (comportamento esperado do save-state).
+
+Setima rodada (Mode Select, prompt, Exit Game, backends, HUD scale):
+- Prompt OPCOES agora aparece tambem no Mode Select (canto superior direito);
+  no pause continua no canto inferior esquerdo.
+- Falso prompt no mundo: alem do icone Map do pause (tbp 15360/PSMT8, faixa
+  x 200-310/y 15-130) e dos 30 frames, o desenho precisa estar no ULTIMO QUARTO
+  do frame (HUD 2D e desenhado depois do cenario 3D). Objetos do mundo que usam
+  a mesma textura sao desenhados antes.
+- Exit Game agora abre confirmacao nativa "Sair do jogo / Cancelar"; so Sair
+  encerra. Testado: Cancelar loga "[menu] exit game cancelled"; Sair loga
+  "confirmed" e halt("exit game").
+- Graphic API: removido Software (deixava o menu invisivel). Opcoes Auto/Vulkan
+  no Linux; DirectX 12 no Windows (filtrado no construtor do menu). OpenGL foi
+  testado e o backend GL do wgpu-native entra em panic, entao nao foi exposto.
+  Ini antigo com Software/DX12/OpenGL e saneado no load.
+- HUD Aspect Ratio vence HUD Scale manual quando escolhido; com hud_scale=0.57
+  salvo, escolher 16:9/21:9 agora muda o HUD. Testado RMSE 0.0041.
+- game_settings.ini do usuario: Software trocado por Auto; demais valores
+  preservados (2560x1440, Windowed, FXAA Ultra, hud_scale 0.57, vsync Off).
+
+Oitava rodada (bilinear real, save state, camera, secoes):
+- Texture Filtering = Bilinear: o cenario continua na grade sub (nitidez).
+  Usam a grade nativa (bit 17 do Setup): os TBPs do HUD/mapa/efeito de save
+  (14416/14450/14928/14944/15072/15136/15200), texturas <= 64x64 (fontes/icones) e texturas magnificadas
+  >= 1.5x na tela. Textos/sprites ficam suaves como no PCSX2 sem embutir o
+  cenario. As tiras de FMV seguem excluidas (linhas verticais). Testado com
+  states/mode_select.ps2 (comparado a pcsx2_mode_select.png), 
+  states/master_mode.ps2 e frames de FMV byte-identicos. PS2_BILIN_STEP*
+  continua ignorado com Bilinear.
+- Recomp Settings ganhou a secao Save States: Save State grava
+  states/naruto.ps2 e Load State restaura. O I/O roda na thread de emulacao no
+  proximo limite de frame (request_save_state/request_load_state), sem
+  serializar a maquina no meio de um dispatch.
+- Inverted Camera inverte X e Y do analogico direito.
+- R1/L1 trocam de secao no Recomp Settings (teclado: E/Q).
+- HUD Aspect Ratio agora e' Off por padrao e o game_settings.ini do usuario foi
+  salvo com hud_aspect = Off: era o que eliminava os objetos errados do Master
+  Mode. A janela continua adaptando a altura ao aspecto (16:9/21:9/32:9) e a
+  Resolution manda na escala interna: 1080p agora = 4x/2048x1792 (antes
+  3x/1536x1344). O 3x era mais estreito que a janela de 1920, entao a
+  apresentacao ampliava e texto/sprites ficavam pixelados. 4x faz downscale
+  (supersampling). 720p=3x, 1440p=5x, 4K=6x.
+- Carregamento do .ini corrigido: o arquivo e' procurado no cwd e tambem
+  acima/ao lado do executavel, entao abrir o jogo por outro diretorio (atalho,
+  build/dev-naruto) nao cai mais nos defaults. Secoes alem de [recomp]
+  (ex.: [game] invert_camera) agora chegam ao runtime, nao so ao menu.
+- Screen Mode salvo passou a valer sem --window: um launch normal (sem
+  --frames/--frames-dir) abre na janela/cheio conforme o .ini. A Resolution do
+  .ini nao forca mais fullscreen; so --resolution na linha de comando faz isso.
+- HUD e mapa: a camera de UI (xyoff 0x7000/0x7200) inteira passou a usar a
+  grade nativa (retrato, barra de vida, texto, minimapa e mapa). O cenario
+  (camera normal) continua na grade sub. TBPs 14928/14944/15072/15136/15200
+  e 14416/14450 ficam na lista como reforco. Testado no mundo: HUD/minimapa
+  suaves, cenario identico. PS2_NO_UI_NATIVE=1 desliga para comparar.
+- Maximizar a janela nao aumenta mais o custo: o blit/FXAA pesado roda na
+  Resolution configurada (1080p -> 1920x1080) e um segundo passe barato
+  (fs_up, uma amostra de textura) escala a imagem para a janela, preservando o
+  aspecto. Sem barras pretas quando o aspecto coincide; 4:3 continua com
+  barras laterais. O titulo mostra "Janela" (tamanho real) e "Resolucao
+  apresentada" (limitada). PS2_NO_PRESENT_CAP=1 desativa o limite para
+  diagnostico.
+
+Nona rodada (frame pacing / micro travadas):
+- Investigado com mangohud (log por frame, master_mode no mundo andando,
+  1080p/4x, vsync Off): a media era 60 FPS mas o 1% low ficava em ~23 FPS e
+  apareciam frames de 40-44 ms. O log interno mostrou presents postados em
+  pares (2 ms + 25-33 ms): o pace() rodava DEPOIS de postar o present e o
+  emulador podia adiantar 2-3 vblanks ate o audio encher.
+- Correcao: pace() agora roda ANTES do post do present e usa um limite de
+  tempo real por vblank (16,67 ms a 60 Hz), com o audio apenas como guarda de
+  underrun (60 ms). Resultado no mesmo teste:
+  * 1% low: 23,1 -> 39,1 FPS; 0,1% low: 22,5 -> 34,7 FPS;
+  * nenhum frame acima de 33 ms (antes 7,2% >40 ms); max 28,8 ms;
+  * media 60,0 FPS / 16,7 ms, GPU 80% (pico 83%).
+- O VSync On continua pior nessa cena (~51 FPS medios, 1% low 28), entao o
+  padrao segue Off. O padrao alternado que resta (~17/24 ms) e o trabalho de
+  GS a cada DOIS frames (o render desenha um campo por vez); eliminar isso
+  exigiria bufferizar um frame inteiro (mais latencia) ou otimizar o caminho
+  de draws.
+- Diagnostico opt-in: PS2_PRESENT_LOG=arquivo.csv grava V (vblank), S (pace),
+  E (post), P (present) e Q (fim do present) com timestamp em us.
+
+Decima rodada (otimizacao do caminho de draws + perfil de CPU):
+- rendered() (varredura de paginas de 8 KiB) deixou de rodar em todo draw
+  texturizado: so e' chamado nos modos nativos experimentais e no draw log.
+- add_spans: bbox pequena (<= 64 tiles) usa o retangulo inteiro em vez da
+  matematica de arestas (3 retas + divisoes em double). A saida e' byte-
+  identica (frame 3000 comparado), e o raster ainda testa o triangulo real.
+- Listas de tiles preenchidas com store uint16 direto (sem memcpy de 2 bytes).
+- Diagnostico PS2_BATCH_STATS=1 mostra flushes/prims e tempos por etapa.
+- Medido no master_mode (623 frames):
+  spans 588 -> 486 ms, fill 598 -> 571 ms (~11% no flush_batch), visual igual.
+  MangoHud: media 60,0 / 1% low 39,4 / GPU 80,3% / CPU real 13,6%.
+- Perfil PS2_PROFILE (amostras de CPU): flush_batch ~18%, vif::run ~10,6%,
+  gpu::draw ~8,7%, VU1 recompilado ~14%, fila/GIF ~8%, GS write/vertex ~5%,
+  IOP ~2,6%. O "CPU real" de ~14% do sistema equivale a ~1,6-1,7 nucleos,
+  puxado por emulacao/render, nao por Resolution/AA.
+- Proximos alvos de CPU: unpack/packet do VIF, microcodigo VU1, fila GIF e
+  caminho de write do GS.
+
+Decima primeira rodada (captura estatica total / New Game):
+- O jogo fechava em New Game com missing code em 0x005E3BC0. O filtro de
+  varredura usava so a faixa de codigo ja descoberta, entao a tabela de
+  ponteiros em 0x005E7210 (lida por jalr em 0x0011A0EC) e os alvos dela nunca
+  eram vistos. Agora todo segmento executavel do ELF e varrido.
+- eerecomp semeia todo prologo addiu/daddiu sp,sp,-N como funcao, le todas as
+  palavras/ponteiros e reavalia os candidatos rejeitados a cada rodada.
+  Mesma varredura vale para modulos SNR2 e para cada imagem de code window.
+- scripts/payloads.py extrai PRG/ADV.BIN, BTL.BIN e ETC.BIN da ISO, confere
+  que sao codigo MIPS e os entrega como imagens de 0x006C6D00. Nao e' mais
+  preciso explorar o jogo para capturar essas janelas.
+- Identidade das janelas usa inicios de funcao como checks (dados que o jogo
+  escreve na janela nao invalidam mais a imagem).
+- Instalador: build completo testado sem exploracao ja entra em New Game;
+  exploracao padrao caiu para 3600/6000 frames e 2/4 rodadas, com smoke de
+  300 frames e no maximo duas exploracoes extras se ainda faltar codigo.
+
+Decima segunda rodada (overlay por tabela de ponteiros + cache de dev):
+- missing code em 0x006CEC10 (ADV +0x7F10) corrigido. O jogo chama a funcao
+  por uma tabela de ponteiros em RAM, inicializada com palavras do ELF; o
+  recompilador agora semeia nas imagens de overlay todo valor de 32 bits que
+  aponta para dentro da janela, nao so chamadas jal/jmp.
+- ADV/BTL/ETC passaram de 1.485 para 7.102 entry points semeados; 0x006CEC10
+  (funcao folha sem prologo) agora e' traduzida.
+- port.sh grava .analysis-key (ELF, ISO, overlays, entries, vu1). Se o jogo
+  nao mudou, pula a exploracao e faz so traducao + ninja incremental. Uma
+  mudanca de runtime/recompilador rebuilda em segundos; --refresh forca a
+  exploracao.
+- build/tools/eerecomp e vurecomp sao atualizados quando o binario embarcado
+  e' mais novo, para uma instalacao existente nao ficar com ferramenta velha.
+- scripts/package.sh sincroniza o codigo do dev nos dois pacotes, rebuilda o
+  eerecomp/vurecomp com o Zig embarcado e regera archives/checksums. Acabou a
+  copia manual que fazia o build divergir do dev.
+
+Decima terceira rodada (VU1 AOT / lag no Master Mode e luta):
+- O build publico nao tinha VU1 compilado; o runtime interpretava o microcodigo
+  (lag no Master Mode e nas lutas). O mode select, que quase nao usa VU1,
+  ficava normal.
+- A exploracao padrao voltou para 12000 frames (GUI 12000/16000) para chegar
+  na primeira luta e gravar VU1. O cache .analysis-key evita repetir.
+- jogar.sh grava VU1 durante o jogo e chama scripts/vu_refresh.sh ao sair;
+  ele roda vurecomp + ninja so quando .manifest muda. A proxima sessao usa
+  AOT. O Master Mode atual ja foi gravado/compilado (42 arquivos, 96 programas).
+- PS2_NO_VU_AOT=1 permite comparar interpretador x AOT: 49 fps vs 106 fps
+  headless no mesmo trecho de 8000 frames.
+
+Decima quarta rodada (link da GPU no pacote):
+- Corrigido undefined symbol ps2::gs::gpu::present_width/present_height/etc.
+  O port.sh copiado do dev nao passava -DPS2_WGPU_DIR/-DSDL2_DIR; o cache
+  apontava para third_party/wgpu-native (inexistente no pacote) e o gpu.cpp
+  ficava fora do build.
+- build_native agora sempre roda cmake com os caminhos do toolchain e
+  reconstroi build.ninja quando a lista de fontes muda.
+
+Decima quinta rodada (launcher x PS2_NO_VU_AOT):
+- Se PS2_NO_VU_AOT ficou exportado no shell, o launcher herdava o diagnostico
+  e voltava ao interpretador. jogar.sh remove a variavel, avisa e imprime
+  "[launcher] VU1 compilado: N programas".
+- Instalacao de referencia: 55 arquivos / 124 programas VU1; 60,0 fps em
+  Master Mode e luta (windowed 1080p), 109 fps headless com AOT contra 49 fps
+  no interpretador.
+
+Decima sexta rodada (Windows x64):
+- Pacote Windows autocontido com Zig/Python/SDL2/wgpu/eerecomp/vurecomp,
+  instalador Windows Forms e jogar.bat. Testado sob Wine; falta Windows real.
+
+Decima setima rodada (Windows 7fps):
+- WaitOnAddress/WakeByAddressAll no lugar do poll do libc++; fallback CV.
+- build_win.py com -march=haswell; instalador wizard NSIS e diagnostico.

@@ -1,0 +1,4 @@
+[Widescreen 16:9]
+gsaspectratio=16:9
+description=Naruto Ultimate Ninja 5 - FOV 16:9
+patch=1,EE,20B3EF14,extended,3F400000

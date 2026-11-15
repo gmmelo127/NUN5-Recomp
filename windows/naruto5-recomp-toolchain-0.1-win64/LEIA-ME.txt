@@ -1,0 +1,40 @@
+Naruto Shippuden: Ultimate Ninja 5 - Recomp nativo (Windows x64)
+==============================================================
+
+REQUISITOS
+- Windows 10/11 x64
+- Driver Vulkan da GPU (AMD, NVIDIA ou Intel)
+- Uma ISO legal do jogo (PAL SLES-556.05). A ISO NAO acompanha o pacote.
+
+INSTALAR
+1. Extraia o ZIP em uma pasta (nao precisa de admin).
+2. Clique com o botao direito em instalar.bat > Executar como administrador
+   (ou apenas duplo clique).
+3. Escolha a ISO e a pasta de instalacao.
+4. Marque o patch NTSC/60 Hz se usar a versao PAL.
+5. Clique em Instalar. A primeira compilacao leva alguns minutos.
+
+O instalador NAO baixa nada: Zig, Python, SDL2, wgpu-native, eerecomp e
+vurecomp ja estao em toolchain/.
+
+JOGAR
+- Use o atalho criado ou jogar.bat na pasta de instalacao.
+- Na primeira vez que uma cena 3D nova aparecer, o VU1 pode ser gravado e
+  compilado ao sair; a proxima visita usa o codigo compilado.
+
+OBSERVACOES
+- O memory card em branco e criado em games\naruto\memcard.ps2.
+- Nenhum save, textura, audio, FMV ou codigo do jogo acompanha o pacote.
+- O build e feito na sua maquina a partir da sua ISO.
+
+
+DESEMPENHO
+- A primeira visita a uma cena 3D nova pode gravar VU1 e ficar lenta. Feche o
+  jogo, aguarde a mensagem "Otimizando VU1..." e abra de novo.
+- Se quiser forcar: otimizar_vu.bat (pode passar um save state como argumento).
+- A screenshot mostra o backend Vulkan. Se estiver lento, tente:
+      jogar_dx12.bat
+  (Recomp Settings > Graphic API = DirectX 12 tambem funciona).
+- Desative overlays externos (MangoHud/RTSS/Afterburner) para medir. Eles
+  podem derrubar o desempenho no Windows.
+- Rode diagnostico.bat e envie games\naruto\diagnostico.log e launcher.log.

@@ -1,0 +1,16 @@
+# vao apenas para as releases, nunca para o repositorio
+releases/
+nao-enviar/
+
+# grandes demais para o GitHub e gerados localmente
+**/toolchain/
+**/build/
+**/games/
+**/generated/
+
+# artefatos de release nunca entram no repositorio
+**/*.tar.xz
+**/*.tar.gz
+**/*.7z
+**/*.zip
+**/*.exe

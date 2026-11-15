@@ -1,0 +1,5 @@
+# Nao vao para o repositorio (grandes demais para o GitHub / saida de build).
+**/toolchain/
+**/build/
+**/games/
+**/generated/
